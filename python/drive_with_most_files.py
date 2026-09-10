@@ -36,6 +36,11 @@ def getDriveWithMostFiles(absoluteFilePathList) -> list[str | int]:
     for absoluteFilePath in absoluteFilePathList:
         # Split the path into components using backslash as the separator
         drive_name = absoluteFilePath.split("\\")[0]  # Get the drive name (e.g., "C:")
+        if not drive_name.endswith(":"):
+            raise ValueError(f"Invalid drive name in path: {absoluteFilePath}")
+        if len(drive_name) != 2 or not drive_name[0].isalpha():
+            raise ValueError(f"Invalid path: {absoluteFilePath}. Drive name must be a single letter followed by a colon (e.g., 'C:').")
+
         drive_filenames.setdefault(drive_name, set()).add(absoluteFilePath)
 
         components = absoluteFilePath.split("\\")
@@ -120,7 +125,31 @@ class TestgetDriveWithMostFiles(unittest.TestCase):
             "D:\\folder3\\file1.txt",
             "D:\\folder3\\folder4\\folder5\\file1.txt",
         ]
-        self.assertEqual(getDriveWithMostFiles(paths), ["D:", 3, 2])     
+        self.assertEqual(getDriveWithMostFiles(paths), ["D:", 3, 2])
+
+    def test_6(self):
+        paths = []
+        self.assertEqual(getDriveWithMostFiles(paths), [])
+
+    def test_7(self):
+        paths = [
+            "E\\folder1\\file1.txt",
+            "E:\\folder1\\folder2\\folder3\\file1.txt",
+            "D:\\folder3\\file1.txt",
+            "D:\\folder3\\folder4\\folder5\\file1.txt",
+        ]
+        with self.assertRaises(ValueError):
+            getDriveWithMostFiles(paths)
+    
+    def test_8(self):
+        paths = [
+            "ED:\\folder1\\file1.txt",
+            "E:\\folder1\\folder2\\folder3\\file1.txt",
+            "D:\\folder3\\file1.txt",
+            "D:\\folder3\\folder4\\folder5\\file1.txt",
+        ]
+        with self.assertRaises(ValueError):
+            getDriveWithMostFiles(paths)
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
