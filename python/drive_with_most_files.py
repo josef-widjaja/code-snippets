@@ -1,8 +1,8 @@
 def getDriveWithMostFiles(absoluteFilePathList) -> list[str | int]:
     """Get Windows drive with the most files.
 
-    Given a list of absolute file paths, this function identifies the Windows
-    drive with the most number of files. by returning a list of 3 items:
+    Given a list of absolute Windows file paths, this function returns the Windows drive that
+    has the most files in it along with the number of folders and the number of files in that drive:
     [ Windows drive name, number of folders, number of files]
 
     Args:
@@ -71,7 +71,6 @@ def getDriveWithMostFiles(absoluteFilePathList) -> list[str | int]:
         return []
 
     return [ drive_with_most_files, num_folders_in_drive_with_most_files, max_files ]
-
 
 import unittest
 
