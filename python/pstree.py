@@ -14,40 +14,47 @@ def print_usage():
     print("      process tree will be printed starting from root process to pid 1234")
     sys.exit(1)
 
-if len(sys.argv) > 2:
-    print_usage()
-if len(sys.argv) == 1:
-    process_id = os.getpid()  # Get the current process ID
-if len(sys.argv) == 2:
+def print_stack(pid_stack):
+    leading_spaces = ""
+    while len(pid_stack) > 0:
+        pid = pid_stack.pop()
+        process_name = psutil.Process(pid).name() if psutil.pid_exists(pid) else "Unknown"
+        print(f"{leading_spaces}{pid} {process_name}")
+        leading_spaces = leading_spaces + " "
+
+def add_ancestor_processes(pid, pid_stack):
+    if pid == 1:  # root process, no ancestors
+        return
     try:
-        process_id= int(sys.argv[1])
-    except ValueError:
-        print("Error: pid must be an integer.")
-        print_usage()
-
-    if psutil.pid_exists(process_id):
-        process_name = psutil.Process(process_id).name()
-    else:
-        print(f"Error: Process with PID {process_id} does not exist.")
-        print_usage()
-
-parent_pid = os.getppid()
-
-pid_stack = deque()
-pid_stack.append(process_id)
-pid_stack.append(parent_pid)
-while parent_pid != 1:  # Continue until we reach the root process (PID 1)
-    try:
-        parent_process = psutil.Process(parent_pid)
-        parent_pid = parent_process.ppid()  # Get the parent PID of the current process
+        parent_pid = psutil.Process(pid).ppid()  # Get the parent PID of the current process
         pid_stack.append(parent_pid)
+        add_ancestor_processes(parent_pid, pid_stack)  # Recursive call for the parent process
     except psutil.NoSuchProcess:
-        break  # If the process no longer exists, exit the loop
+        pass  # If the process no longer exists, exit the recursion
 
-leading_spaces = ""
-while len(pid_stack) > 0:
-    pid = pid_stack.pop()
-    process_name = psutil.Process(pid).name() if psutil.pid_exists(pid) else "Unknown"
-    print(f"{leading_spaces}{pid} {process_name}")
-    leading_spaces = leading_spaces + " "
-    
+def main():
+    print(f"Current process ID: {os.getpid()}")
+    if len(sys.argv) > 2:
+        print_usage()
+    if len(sys.argv) == 1:
+        process_id = os.getpid()  # Get the current process ID
+    if len(sys.argv) == 2:
+        try:
+            process_id= int(sys.argv[1])
+        except ValueError:
+            print("Error: pid must be an integer.")
+            print_usage()
+
+        if psutil.pid_exists(process_id):
+            process_name = psutil.Process(process_id).name()
+        else:
+            print(f"Error: Process with PID {process_id} does not exist.")
+            print_usage()
+
+    pid_ancestry_stack = deque()
+    pid_ancestry_stack.append(process_id)
+    add_ancestor_processes(process_id, pid_ancestry_stack)
+    print_stack(pid_ancestry_stack)
+
+if __name__ == "__main__":
+    main()
