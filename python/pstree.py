@@ -33,7 +33,6 @@ def add_ancestor_processes(pid, pid_stack):
         pass  # If the process no longer exists, exit the recursion
 
 def main():
-    print(f"Current process ID: {os.getpid()}")
     if len(sys.argv) > 2:
         print_usage()
     if len(sys.argv) == 1:
@@ -45,9 +44,7 @@ def main():
             print("Error: pid must be an integer.")
             print_usage()
 
-        if psutil.pid_exists(process_id):
-            process_name = psutil.Process(process_id).name()
-        else:
+        if not psutil.pid_exists(process_id):
             print(f"Error: Process with PID {process_id} does not exist.")
             print_usage()
 
