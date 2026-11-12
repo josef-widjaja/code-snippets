@@ -43,11 +43,12 @@ def main():
         except ValueError:
             print("Error: pid must be an integer.")
             print_usage()
-
+        if process_id <= 0:
+            print("Error: pid must be a positive integer.")
+            print_usage()
         if not psutil.pid_exists(process_id):
             print(f"Error: Process with PID {process_id} does not exist.")
             print_usage()
-
     pid_ancestry_stack = deque()
     pid_ancestry_stack.append(process_id)
     add_ancestor_processes(process_id, pid_ancestry_stack)
