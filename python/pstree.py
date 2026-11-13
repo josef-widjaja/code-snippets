@@ -1,18 +1,11 @@
 #!/usr/bin/env python3
+import argparse
 import os
 import sys
 from collections import deque
 
 import psutil
 
-
-def print_usage():  
-    print("Usage: pstree [pid]")
-    print("  pid: Optional. The process ID for which all ancestor processes will be printed.")
-    print("      If no pid is provided, pid is set to the current process ID")
-    print("  Example: pstree 1234")
-    print("      process tree will be printed starting from root process to pid 1234")
-    sys.exit(1)
 
 def print_stack(pid_stack):
     leading_spaces = ""
@@ -32,27 +25,51 @@ def add_ancestor_processes(pid, pid_stack):
     except psutil.NoSuchProcess:
         pass  # If the process no longer exists, exit the recursion
 
+def print_ancestor_tree(pid):
+    pid_ancestry_stack = deque()
+    pid_ancestry_stack.append(pid)
+    add_ancestor_processes(pid, pid_ancestry_stack)
+    print_stack(pid_ancestry_stack)
+
+def print_children(pid, level):
+    try:
+        process = psutil.Process(pid)
+        print(f"{' ' * level}{pid} {process.name()}")
+        for child in process.children():
+            print_children(child.pid, level + 1)
+    except psutil.NoSuchProcess:
+        pass  # If the process no longer exists, exit the recursion
+
+def print_descendant_tree(pid):
+    print_children(pid, 0) # Start printing from the given PID with an initial indentation level of 0
+
 def main():
-    if len(sys.argv) > 2:
-        print_usage()
-    if len(sys.argv) == 1:
+    parser = argparse.ArgumentParser(description="Print process tree.")
+    parser.add_argument("-d", "--descendants", action="store_true",
+                        help="Print descendant processes instead of ancestor processes.")
+    parser.add_argument("pid", nargs="?", type=int,
+                        help="The process ID for which all ancestor processes will be printed.")
+
+    args = parser.parse_args()
+    if args.pid is None:
         process_id = os.getpid()  # Get the current process ID
-    if len(sys.argv) == 2:
+    else:
         try:
-            process_id= int(sys.argv[1])
+            process_id= int(args.pid)
         except ValueError:
             print("Error: pid must be an integer.")
-            print_usage()
+            sys.exit(1)
         if process_id <= 0:
             print("Error: pid must be a positive integer.")
-            print_usage()
+            sys.exit(1)
         if not psutil.pid_exists(process_id):
             print(f"Error: Process with PID {process_id} does not exist.")
-            print_usage()
-    pid_ancestry_stack = deque()
-    pid_ancestry_stack.append(process_id)
-    add_ancestor_processes(process_id, pid_ancestry_stack)
-    print_stack(pid_ancestry_stack)
+            sys.exit(1)
+
+    if args.descendants:
+        print_descendant_tree(process_id)
+    else:
+        print_ancestor_tree(process_id)
 
 if __name__ == "__main__":
     main()
